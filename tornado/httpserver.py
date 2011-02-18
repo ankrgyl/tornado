@@ -365,9 +365,25 @@ class HTTPConnection(object):
                 arguments = cgi.parse_qs(self._request.body)
                 for name, values in arguments.iteritems():
                     values = [v for v in values if v]
-                    if values:
-                        self._request.arguments.setdefault(name, []).extend(
-                            values)
+                    nametree = name.split('[')
+                    nametree = [s.split(']')[0] for s in nametree]
+
+                    value_list = []
+                    value_list.extend(values)
+
+                    curr = self._request.arguments
+                    for root in nametree[:-1]:
+                        if root not in curr:
+                            curr[root] = {}
+                        curr = curr[root]
+                    curr[nametree[-1]] = value_list
+#                for name, values in arguments.iteritems():
+#                    print name, values
+#                    values = [v for v in values if v]
+#                    if values:
+#                        self._request.arguments.setdefault(name, []).extend(
+#                            values)
+                print self._request.arguments
             elif content_type.startswith("multipart/form-data"):
                 fields = content_type.split(";")
                 for field in fields:
