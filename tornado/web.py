@@ -227,28 +227,39 @@ class RequestHandler(object):
 
         The returned value is always unicode.
         """
-        args = self.get_arguments(name, strip=strip)
-        if not args:
+        arg = self.get_arguments(name, strip=strip)
+        if not arg:
             if default is self._ARG_DEFAULT:
                 raise HTTPError(404, "Missing argument %s" % name)
             return default
-        return args[-1]
+        return arg
 
     def get_arguments(self, name, strip=True):
-        """Returns a list of the arguments with the given name.
+        """Return last argument with the given name. Modified from all arguments
+        because it now performs a deep traversal, maintaining the dict structure.
 
-        If the argument is not present, returns an empty list.
+        If the argument is not present, returns None.
 
         The returned values are always unicode.
         """
         values = self.request.arguments.get(name, [])
-        # Get rid of any weird control chars
-        values = [re.sub(r"[\x00-\x08\x0e-\x1f]", " ", x) for x in values]
-        values = [_unicode(x) for x in values]
-        if strip:
-            values = [x.strip() for x in values]
-        return values
+        def _recurse_to_list(vals):
+            if vals == None:
+                return None
 
+            if isinstance(vals, dict):
+                ret = {}
+                for k,v in vals.items():
+                    ret[_unicode(k)] = _recurse_to_list(v)
+                return ret
+            else:
+                # Get rid of any weird control chars
+                vals = [re.sub(r"[\x00-\x08\x0e-\x1f]", " ", x) for x in vals]
+                vals = [_unicode(x) for x in vals]
+                if strip:
+                    vals = [x.strip() for x in vals]
+                return vals[-1]
+        return _recurse_to_list(values)
 
     @property
     def cookies(self):
