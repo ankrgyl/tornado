@@ -244,7 +244,7 @@ class RequestHandler(object):
         """
         values = self.request.arguments.get(name, [])
         def _recurse_to_list(vals):
-            if vals == None:
+            if vals == None or vals == []:
                 return None
 
             if isinstance(vals, dict):

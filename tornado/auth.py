@@ -920,6 +920,7 @@ class FacebookGraphMixin(OAuth2Mixin):
     _OAUTH_ACCESS_TOKEN_URL = "https://graph.facebook.com/oauth/access_token?"
     _OAUTH_AUTHORIZE_URL = "https://graph.facebook.com/oauth/authorize?"
     _OAUTH_NO_CALLBACKS = False
+    base_fields = set(['id', 'name', 'first_name', 'last_name', 'locale', 'picture', 'link'])
 
     def get_authenticated_user(self, redirect_uri, client_id, client_secret,
                               code, callback, extra_fields=None):
@@ -979,7 +980,8 @@ class FacebookGraphMixin(OAuth2Mixin):
           callback=self.async_callback(
               self._on_get_user_info, callback, session, extra_fields),
           access_token=session["access_token"],
-          fields="picture" # This one's exceptional in that it appends to fields returned
+          #fields="picture,name,first_name,last_name,locale,picture,link,id" # This one's exceptional in that it appends to fields returned
+          fields = ','.join(self.base_fields | set(extra_fields)) #MODIFICATION modified tornado code to actually request the relevant fields.
           )
 
 
@@ -988,8 +990,7 @@ class FacebookGraphMixin(OAuth2Mixin):
             callback(None)
             return
 
-        fields = set(['id', 'name', 'first_name', 'last_name', 'locale', 'picture', 'link'])
-        if extra_fields: fields.update(extra_fields)
+        fields = self.base_fields | set(extra_fields)
 
         fieldmap = {}
         for field in fields:
